@@ -1,0 +1,34 @@
+services:
+  chatbot:
+    image: kavix28/oudience-chatbot:v1.2
+    container_name: oudience_chatbot_prod
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      FLASK_ENV: production
+      RAG_SIMILARITY_THRESHOLD: 0.30
+      HF_HOME: /app/model_cache
+      PORT: 5001
+
+    ports:
+      - "5001:5001"
+
+    volumes:
+      - oudience_data:/app/data
+      - oudience_sessions:/app/flask_sessions
+      - oudience_uploads:/app/uploads
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5001/test/system/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  oudience_data:
+  oudience_sessions:
+  oudience_uploads:
