@@ -1,0 +1,202 @@
+[
+  {
+    "order_id": "AMZ123456789",
+    "email": "john@example.com",
+    "phone": "9876543210",
+    "items": [
+      {
+        "name": "Wireless Headphones",
+        "quantity": 1,
+        "price": 2999
+      },
+      {
+        "name": "Phone Case",
+        "quantity": 2,
+        "price": 599
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "out_for_delivery",
+    "carrier": "Amazon Logistics",
+    "tracking_id": "TRK789012345",
+    "expected_delivery": "2026-02-14",
+    "last_updated": "2026-02-13 14:30:00"
+  },
+  {
+    "order_id": "ORD-10293",
+    "email": "user@example.com",
+    "phone": "5551234567",
+    "items": [
+      {
+        "name": "Laptop Stand",
+        "quantity": 1,
+        "price": 3499
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "shipped",
+    "carrier": "FedEx",
+    "tracking_id": "TRK987654321",
+    "expected_delivery": "2026-02-16",
+    "last_updated": "2026-02-12 09:15:00"
+  },
+  {
+    "order_id": "AMZ987654321",
+    "email": "jane@example.com",
+    "phone": "8765432109",
+    "items": [
+      {
+        "name": "Bluetooth Speaker",
+        "quantity": 1,
+        "price": 4999
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "delivered",
+    "carrier": "Blue Dart",
+    "tracking_id": "TRK456789012",
+    "expected_delivery": "2026-02-10",
+    "last_updated": "2026-02-10 16:45:00"
+  },
+  {
+    "order_id": "AMZ555666777",
+    "email": "mike@example.com",
+    "phone": "7654321098",
+    "items": [
+      {
+        "name": "Gaming Mouse",
+        "quantity": 1,
+        "price": 1899
+      }
+    ],
+    "payment_status": "pending",
+    "shipment_status": "processing",
+    "carrier": "",
+    "tracking_id": "",
+    "expected_delivery": "2026-02-18",
+    "last_updated": "2026-02-13 10:15:00"
+  },
+  {
+    "order_id": "AMZ111222333",
+    "email": "sarah@example.com",
+    "phone": "9123456780",
+    "items": [
+      {
+        "name": "Smart Watch",
+        "quantity": 1,
+        "price": 15999
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "delivered",
+    "carrier": "DHL Express",
+    "tracking_id": "TRK111222333",
+    "expected_delivery": "2026-02-08",
+    "last_updated": "2026-02-08 11:20:00"
+  },
+  {
+    "order_id": "ORD-20384",
+    "email": "robert@example.com",
+    "phone": "8234567891",
+    "items": [
+      {
+        "name": "USB-C Cable",
+        "quantity": 3,
+        "price": 299
+      },
+      {
+        "name": "Power Bank",
+        "quantity": 1,
+        "price": 1999
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "out_for_delivery",
+    "carrier": "Amazon Logistics",
+    "tracking_id": "TRK445566778",
+    "expected_delivery": "2026-02-13",
+    "last_updated": "2026-02-13 08:45:00"
+  },
+  {
+    "order_id": "AMZ444555666",
+    "email": "emma@example.com",
+    "phone": "7345678912",
+    "items": [
+      {
+        "name": "Yoga Mat",
+        "quantity": 1,
+        "price": 1299
+      },
+      {
+        "name": "Resistance Bands",
+        "quantity": 1,
+        "price": 799
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "processing",
+    "carrier": "",
+    "tracking_id": "",
+    "expected_delivery": "2026-02-17",
+    "last_updated": "2026-02-13 15:00:00"
+  },
+  {
+    "order_id": "ORD-30495",
+    "email": "david@example.com",
+    "phone": "6456789123",
+    "items": [
+      {
+        "name": "Coffee Maker",
+        "quantity": 1,
+        "price": 8999
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "shipped",
+    "carrier": "Blue Dart",
+    "tracking_id": "TRK998877665",
+    "expected_delivery": "2026-02-15",
+    "last_updated": "2026-02-11 16:30:00"
+  },
+  {
+    "order_id": "AMZ777888999",
+    "email": "lisa@example.com",
+    "phone": "5567891234",
+    "items": [
+      {
+        "name": "Desk Lamp",
+        "quantity": 1,
+        "price": 2499
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "cancelled",
+    "carrier": "",
+    "tracking_id": "",
+    "expected_delivery": "",
+    "last_updated": "2026-02-12 10:00:00"
+  },
+  {
+    "order_id": "ORD-40596",
+    "email": "chris@example.com",
+    "phone": "4678912345",
+    "items": [
+      {
+        "name": "Mechanical Keyboard",
+        "quantity": 1,
+        "price": 6999
+      },
+      {
+        "name": "Gaming Mousepad",
+        "quantity": 1,
+        "price": 1299
+      }
+    ],
+    "payment_status": "paid",
+    "shipment_status": "delivered",
+    "carrier": "FedEx",
+    "tracking_id": "TRK123987456",
+    "expected_delivery": "2026-02-09",
+    "last_updated": "2026-02-09 14:25:00"
+  }
+]

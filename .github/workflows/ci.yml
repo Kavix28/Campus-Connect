@@ -1,0 +1,192 @@
+# =====================================================================
+# GitHub Actions CI/CD Pipeline — Oudience Chatbot
+# =====================================================================
+# Triggers: push to main, pull requests, manual version tags
+# Jobs:     lint → dependency-test → build-and-push → deploy-artifact
+# =====================================================================
+
+name: Oudience CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*.*"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: kavix28/oudience-chatbot
+
+jobs:
+  # -----------------------------------------------
+  # Job 1: Lint & Static Analysis
+  # -----------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install linting tools
+        run: pip install flake8
+
+      - name: Lint — syntax errors and undefined names
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Lint — style warnings
+        run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  # -----------------------------------------------
+  # Job 2: Dependency Verification
+  # -----------------------------------------------
+  dependency-test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify critical imports
+        run: |
+          python -c "import prometheus_client; print('✓ prometheus_client')"
+          python -c "import flask; print('✓ flask')"
+          python -c "import flask_session; print('✓ flask_session')"
+          python -c "import sentence_transformers; print('✓ sentence_transformers')"
+          python -c "import pdfplumber; print('✓ pdfplumber')"
+          python -c "import waitress; print('✓ waitress')"
+          python -c "import dotenv; print('✓ python-dotenv')"
+          echo "All critical dependencies verified."
+
+  # -----------------------------------------------
+  # Job 3: Build & Push Docker Image
+  # -----------------------------------------------
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: dependency-test
+    if: github.event_name == 'push'
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+      image_version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version tag
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="sha-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Version: $VERSION"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+
+      - name: Print image digest
+        run: |
+          echo "✅ Pushed ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}"
+          echo "📋 Digest: ${{ steps.build.outputs.digest }}"
+
+  # -----------------------------------------------
+  # Job 4: Deploy Artifact (digest-locked manifest)
+  # -----------------------------------------------
+  deploy-artifact:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate digest-locked compose
+        run: |
+          VERSION="${{ needs.build-and-push.outputs.image_version }}"
+          DIGEST="${{ needs.build-and-push.outputs.image_digest }}"
+
+          cat > deploy-manifest.yml << EOF
+          # Auto-generated digest-locked deployment manifest
+          # Version: ${VERSION}
+          # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          services:
+            chatbot:
+              image: ${{ env.IMAGE_NAME }}@${DIGEST}
+              container_name: oudience_chatbot_prod
+              restart: unless-stopped
+              env_file: [.env]
+              environment:
+                FLASK_ENV: production
+                RAG_SIMILARITY_THRESHOLD: "0.30"
+                HF_HOME: /app/model_cache
+                PORT: "5001"
+              ports: ["5001:5001"]
+              volumes:
+                - oudience_data:/app/data
+                - oudience_sessions:/app/flask_sessions
+                - oudience_uploads:/app/uploads
+                - oudience_model_cache:/app/model_cache
+              deploy:
+                resources:
+                  limits:
+                    cpus: "2.0"
+                    memory: 4G
+              healthcheck:
+                test: ["CMD-SHELL", "curl -f http://localhost:5001/test/system/health || exit 1"]
+                interval: 30s
+                timeout: 10s
+                retries: 5
+                start_period: 90s
+          volumes:
+            oudience_data:
+            oudience_sessions:
+            oudience_uploads:
+            oudience_model_cache:
+          EOF
+
+          echo "✅ Digest-locked manifest generated"
+          cat deploy-manifest.yml
+
+      - name: Upload deploy manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-manifest-${{ needs.build-and-push.outputs.image_version }}
+          path: deploy-manifest.yml
+          retention-days: 90

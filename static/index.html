@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Oudience | Premium Customer Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-container">
+        <h1 class="logo-text">Oudience</h1>
+      </div>
+
+      <nav class="nav-links">
+        <button class="nav-btn active" onclick="location.href='/'">
+          <span>💬</span> Chat Support
+        </button>
+        <button class="nav-btn" onclick="window.open('/track-order', '_blank')">
+          <span>📦</span> Track Order
+        </button>
+        <button class="nav-btn" onclick="clearChat()">
+          <span>🗑️</span> Clear History
+        </button>
+      </nav>
+
+      <div style="margin-top: auto; padding-top: 24px; border-top: 1px solid var(--glass-border);">
+        <p style="font-size: 12px; color: var(--text-muted);">
+          © 2026 Oudience AI
+          <br>v2.1.0 High-Performance
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="chat-main">
+      <header class="chat-header">
+        <div class="chat-header-info">
+          <h2>Customer Support</h2>
+          <div class="status-indicator">
+            <span class="dot"></span>
+            AI Concierge is Online
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="quick-btn" onclick="location.href='/track-order'">Track Order Registry</button>
+        </div>
+      </header>
+
+      <div id="chat-messages">
+        <div class="system-msg">
+          ✨ Welcome! I'm your Oudience AI advisor. How can I assist you with your orders or policies today?
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="quick-replies">
+          <button class="quick-btn" onclick="sendQuickMessage('Track my order')">Track Order</button>
+          <button class="quick-btn" onclick="sendQuickMessage('Cancel my order')">Cancel Order</button>
+          <button class="quick-btn" onclick="sendQuickMessage('Refund status')">Refund Status</button>
+          <button class="quick-btn" onclick="sendQuickMessage('Return policy')">Return Policy</button>
+          <button class="quick-btn" onclick="sendQuickMessage('Payment failed')">Payment Issue</button>
+        </div>
+
+        <div class="input-container">
+          <input id="input" type="text" placeholder="Type your inquiry here..." maxlength="500" autocomplete="off" />
+          <button id="sendBtn" class="send-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+
+        <div id="typingIndicator" class="typing">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const input = document.getElementById("input");
+    const messagesContainer = document.getElementById("chat-messages");
+    const sendBtn = document.getElementById("sendBtn");
+    const typingIndicator = document.getElementById("typingIndicator");
+
+    let isBotTyping = false;
+
+    function addMessage(text, type = "bot", responseTime = null) {
+      const wrapper = document.createElement("div");
+      wrapper.className = `message-wrapper ${type}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "message-bubble";
+
+      // Basic markdown-like formatting for bold text
+      const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      bubble.innerHTML = formattedText;
+
+      wrapper.appendChild(bubble);
+
+      const time = document.createElement("div");
+      time.className = "message-time";
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      time.innerText = type === "bot" && responseTime ? `${now} • ${responseTime}ms` : now;
+
+      wrapper.appendChild(time);
+
+      messagesContainer.appendChild(wrapper);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function toggleTyping(show) {
+      isBotTyping = show;
+      typingIndicator.classList.toggle("active", show);
+      if (show) scrollToBottom();
+    }
+
+    function clearChat() {
+      messagesContainer.innerHTML = '<div class="system-msg">✨ Conversation history and context cleared. How can I assist you now?</div>';
+      fetch("/session/clear", { method: "POST" });
+    }
+
+    async function sendMessage(text = null) {
+      const query = text || input.value.trim();
+      if (!query || sendBtn.disabled) return;
+
+      if (!text) input.value = "";
+
+      addMessage(query, "user");
+      sendBtn.disabled = true;
+      toggleTyping(true);
+
+      const startTime = performance.now();
+
+      try {
+        const response = await fetch("/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query })
+        });
+
+        const data = await response.json();
+        const endTime = performance.now();
+        const duration = Math.round(endTime - startTime);
+
+        toggleTyping(false);
+
+        if (response.ok) {
+          addMessage(data.response, "bot", duration);
+        } else {
+          addMessage("I encountered a server error. Please try again.", "bot");
+        }
+      } catch (err) {
+        toggleTyping(false);
+        addMessage("Connection lost. Please check your network.", "bot error");
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    function sendQuickMessage(msg) {
+      sendMessage(msg);
+    }
+
+    sendBtn.onclick = () => sendMessage();
+
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") sendMessage();
+    };
+
+    // Focus input on load
+    window.onload = () => input.focus();
+  </script>
+</body>
+
+</html>

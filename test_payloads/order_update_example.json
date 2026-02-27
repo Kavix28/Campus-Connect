@@ -1,0 +1,9 @@
+{
+    "order_id": "SHOP-2026-12345",
+    "tracking_id": "TRK789012345",
+    "status": "shipped",
+    "carrier": "FedEx",
+    "location": "Mumbai Distribution Center",
+    "timestamp": "2026-01-16T18:30:00Z",
+    "expected_delivery": "2026-01-18"
+}

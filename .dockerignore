@@ -1,0 +1,58 @@
+# ===========================================
+# .dockerignore — Enterprise Production Build
+# ===========================================
+
+# Version control
+.git
+.gitignore
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Runtime data (use volumes, not baked in)
+flask_sessions/
+logs/
+uploads/
+analytics.db
+orders.json
+upload_logs.json
+
+# Documentation (not needed in image)
+*.md
+LICENSE
+
+# Docker files (prevent recursive copy)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Environment files (secrets — NEVER bake in)
+.env
+.env.*
+!.env.example
+
+# CI/CD
+.github/
+
+# Shell scripts
+*.sh
+
+# Test data
+test_payloads/
+
+# Misc
+cleanup_report.txt
+nginx/
+prometheus/

@@ -1,0 +1,71 @@
+# =====================================================================
+# PRODUCTION Compose — Oudience Chatbot
+# =====================================================================
+# Usage:  docker compose -f docker-compose.prod.yml up -d
+# =====================================================================
+
+services:
+  chatbot:
+    image: kavix28/oudience-chatbot:v1.2
+    container_name: oudience_chatbot_prod
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      FLASK_ENV: production
+      RAG_SIMILARITY_THRESHOLD: "0.30"
+      HF_HOME: /app/model_cache
+      PORT: "5001"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+
+    ports:
+      - "5001:5001"
+
+    volumes:
+      - oudience_data:/app/data
+      - oudience_sessions:/app/flask_sessions
+      - oudience_uploads:/app/uploads
+      - oudience_model_cache:/app/model_cache
+
+    # --- Resource Limits ---
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+
+    # --- Security ---
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Flask needs write for sessions/uploads via volumes
+
+    # --- Health Check (tuned for model load time) ---
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5001/test/system/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+    # --- Logging ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        tag: "oudience-chatbot"
+
+    # --- Stop Grace Period ---
+    stop_grace_period: 30s
+
+volumes:
+  oudience_data:
+  oudience_sessions:
+  oudience_uploads:
+  oudience_model_cache:

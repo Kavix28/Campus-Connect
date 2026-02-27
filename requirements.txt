@@ -1,0 +1,13 @@
+flask
+flask-session
+requests
+sentence-transformers
+transformers
+torch
+numpy
+pdfplumber
+python-multipart
+waitress
+python-dotenv
+prometheus-client
+

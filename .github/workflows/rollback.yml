@@ -1,0 +1,84 @@
+# =====================================================================
+# Rollback Workflow — Oudience Chatbot
+# =====================================================================
+# Manual workflow to rollback to a specific image version tag.
+# Usage: Actions → Rollback → Run workflow → Enter version (e.g. v1.2)
+# =====================================================================
+
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image version tag to rollback to (e.g. v1.2)"
+        required: true
+        type: string
+
+env:
+  IMAGE_NAME: kavix28/oudience-chatbot
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version exists on Docker Hub
+        run: |
+          echo "🔍 Checking if ${{ env.IMAGE_NAME }}:${{ inputs.version }} exists..."
+          docker manifest inspect ${{ env.IMAGE_NAME }}:${{ inputs.version }} > /dev/null 2>&1
+          if [ $? -ne 0 ]; then
+            echo "❌ Version ${{ inputs.version }} not found on Docker Hub"
+            exit 1
+          fi
+          echo "✅ Version ${{ inputs.version }} exists"
+
+      - name: Generate rollback compose
+        run: |
+          DIGEST=$(docker manifest inspect ${{ env.IMAGE_NAME }}:${{ inputs.version }} -v 2>/dev/null | \
+                   python3 -c "import sys,json; m=json.load(sys.stdin); print(m.get('Descriptor',{}).get('digest','unknown'))" 2>/dev/null || echo "unknown")
+
+          cat > rollback-manifest.yml << EOF
+          # Rollback manifest — ${{ inputs.version }}
+          # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          # Digest: ${DIGEST}
+          services:
+            chatbot:
+              image: ${{ env.IMAGE_NAME }}:${{ inputs.version }}
+              container_name: oudience_chatbot_prod
+              restart: unless-stopped
+              env_file: [.env]
+              environment:
+                FLASK_ENV: production
+                RAG_SIMILARITY_THRESHOLD: "0.30"
+                HF_HOME: /app/model_cache
+                PORT: "5001"
+              ports: ["5001:5001"]
+              volumes:
+                - oudience_data:/app/data
+                - oudience_sessions:/app/flask_sessions
+                - oudience_uploads:/app/uploads
+                - oudience_model_cache:/app/model_cache
+              healthcheck:
+                test: ["CMD-SHELL", "curl -f http://localhost:5001/test/system/health || exit 1"]
+                interval: 30s
+                timeout: 10s
+                retries: 5
+                start_period: 90s
+          volumes:
+            oudience_data:
+            oudience_sessions:
+            oudience_uploads:
+            oudience_model_cache:
+          EOF
+
+          echo "✅ Rollback manifest for ${{ inputs.version }}"
+          cat rollback-manifest.yml
+
+      - name: Upload rollback manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-${{ inputs.version }}
+          path: rollback-manifest.yml
+          retention-days: 30
